@@ -1,0 +1,1 @@
+placeholder for the rke2 air-gap images tarball (real builds carry a .tar.zst here)
