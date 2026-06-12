@@ -49,6 +49,16 @@ def _build_parser() -> argparse.ArgumentParser:
     m.add_argument("spec")
     m.add_argument("--format", choices=("table", "json"), default="table")
 
+    rn = sub.add_parser("render", help="Render per-node install scripts.")
+    rn.add_argument("spec")
+    rn.add_argument("--out-dir", help="Write <node>.sh files here (else print).")
+
+    es = sub.add_parser("estimate", help="Estimate carry size + transfer time.")
+    es.add_argument("spec")
+    es.add_argument("--mbps", type=float, default=100.0,
+                    help="Link speed in Mbit/s (default 100).")
+    es.add_argument("--format", choices=("table", "json"), default="table")
+
     sub.add_parser("mcp", help="Run as an MCP server (stdio JSON-RPC).")
     return p
 
@@ -115,6 +125,45 @@ def _run_manifest(a) -> int:
     return 0
 
 
+def _run_render(a) -> int:
+    from bootkit import render_scripts, write_scripts
+    try:
+        spec = load_spec(a.spec)
+        if a.out_dir:
+            written = write_scripts(spec, a.out_dir)
+            print(f"bootkit render — wrote {len(written)} script(s) to {a.out_dir}")
+            for w in written:
+                print(f"  {w}")
+        else:
+            for node, script in render_scripts(spec).items():
+                print(f"# ===== {node}.sh =====")
+                print(script)
+    except (OSError, BootkitError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _run_estimate(a) -> int:
+    from bootkit import estimate_transfer
+    base = os.path.dirname(os.path.abspath(a.spec))
+    try:
+        est = estimate_transfer(load_spec(a.spec), base_dir=base, mbps=a.mbps)
+    except (OSError, BootkitError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if a.format == "json":
+        print(json.dumps(est, indent=2))
+    else:
+        print(f"bootkit estimate — {est['cluster']}")
+        print("=" * 64)
+        print(f"  artifacts : {est['artifact_count']}")
+        print(f"  carry size: {_human(est['total_bytes'])}")
+        print(f"  link      : {est['link_mbps']} Mbit/s")
+        print(f"  transfer  : ~{est['estimated_human']}")
+    return 0
+
+
 def _run_mcp() -> int:
     from bootkit.mcp_server import run_mcp_server
     run_mcp_server()
@@ -130,6 +179,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         return _run_preflight(args)
     if args.command == "manifest":
         return _run_manifest(args)
+    if args.command == "render":
+        return _run_render(args)
+    if args.command == "estimate":
+        return _run_estimate(args)
     if args.command == "mcp":
         return _run_mcp()
     parser.print_help(sys.stderr)

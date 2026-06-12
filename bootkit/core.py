@@ -325,6 +325,81 @@ def _install_cmd(distro: str, role: str, init_ip: Optional[str],
 
 
 # --------------------------------------------------------------------------- #
+# Per-node install scripts
+# --------------------------------------------------------------------------- #
+
+def render_scripts(spec: Dict[str, Any]) -> Dict[str, str]:
+    """Render one runnable install script per node from the bootstrap plan.
+
+    Returns {node_name: shell_script}. Steps are grouped by the node they run
+    on, in plan order, so each node gets exactly the commands it must execute.
+    """
+    steps = plan_bootstrap(spec)
+    by_node: Dict[str, List[Dict[str, Any]]] = {}
+    for s in steps:
+        by_node.setdefault(s["node"], []).append(s)
+    scripts: Dict[str, str] = {}
+    name = spec.get("name", "cluster")
+    for node, node_steps in by_node.items():
+        lines = ["#!/usr/bin/env bash",
+                 "set -euo pipefail",
+                 f"# bootkit install script for node '{node}' (cluster '{name}')",
+                 ""]
+        for s in node_steps:
+            lines.append(f"# phase: {s['phase']}")
+            lines.append(s["command"])
+            lines.append("")
+        scripts[node] = "\n".join(lines)
+    return scripts
+
+
+def write_scripts(spec: Dict[str, Any], out_dir: str) -> List[str]:
+    """Write per-node scripts to ``out_dir`` as ``<node>.sh``; return paths."""
+    os.makedirs(out_dir, exist_ok=True)
+    written: List[str] = []
+    for node, script in render_scripts(spec).items():
+        path = os.path.join(out_dir, f"{node}.sh")
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(script)
+        try:
+            os.chmod(path, 0o755)
+        except OSError:
+            pass
+        written.append(path)
+    return written
+
+
+# --------------------------------------------------------------------------- #
+# Transfer estimate
+# --------------------------------------------------------------------------- #
+
+def estimate_transfer(spec: Dict[str, Any], base_dir: str = ".",
+                      mbps: float = 100.0) -> Dict[str, Any]:
+    """Estimate carry size and transfer time across a link of ``mbps`` Mbit/s."""
+    man = build_carry_manifest(spec, base_dir=base_dir)
+    total = man["total_bytes"]
+    seconds = (total * 8) / (mbps * 1_000_000) if mbps > 0 else 0.0
+    return {
+        "cluster": man["cluster"],
+        "artifact_count": man["artifact_count"],
+        "total_bytes": total,
+        "link_mbps": mbps,
+        "estimated_seconds": round(seconds, 2),
+        "estimated_human": _fmt_duration(seconds),
+    }
+
+
+def _fmt_duration(seconds: float) -> str:
+    if seconds < 1:
+        return f"{seconds*1000:.0f}ms"
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+    if seconds < 3600:
+        return f"{seconds/60:.1f}m"
+    return f"{seconds/3600:.1f}h"
+
+
+# --------------------------------------------------------------------------- #
 # AI hook (opt-in, default OFF)
 # --------------------------------------------------------------------------- #
 
