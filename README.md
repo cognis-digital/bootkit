@@ -86,3 +86,31 @@ branding.
 
 Part of the **Cognis Neural Suite** — 300+ source-available tools organized across 12 domains under the JTF MERIDIAN command structure. See the [suite on GitHub](https://github.com/cognis-digital) and [jtf-meridian](https://github.com/cognis-digital/jtf-meridian) for how the pieces fit together.
 <!-- cognis:domains:end -->
+
+## Usage — step by step
+
+`bootkit` turns a node inventory + artifact set into the ordered install plan to seed a disconnected k3s/RKE2-style cluster.
+
+1. **Install** (pure stdlib, Python 3.10+):
+   ```bash
+   pip install "git+https://github.com/cognis-digital/bootkit.git"
+   ```
+2. **Preflight your spec** to validate topology and that every artifact is present before you cross the air-gap (exits non-zero on failure):
+   ```bash
+   bootkit preflight cluster.yaml
+   ```
+3. **Build the carry manifest** (per-artifact size + sha256) and estimate the transfer over your link:
+   ```bash
+   bootkit manifest cluster.yaml
+   bootkit estimate cluster.yaml --mbps 100
+   ```
+4. **Emit the ordered bootstrap plan**, or render per-node install scripts to run on the far side:
+   ```bash
+   bootkit plan cluster.yaml
+   bootkit render cluster.yaml --out-dir ./scripts
+   ```
+5. **Automate in CI** — gate on preflight, then archive the plan as JSON:
+   ```bash
+   bootkit preflight cluster.yaml && bootkit plan cluster.yaml --format json > plan.json
+   ```
+   Or run it as a local MCP server (stdio JSON-RPC): `bootkit mcp`.
