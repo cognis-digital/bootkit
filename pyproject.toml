@@ -34,3 +34,6 @@ bootkit = "bootkit.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["bootkit"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
