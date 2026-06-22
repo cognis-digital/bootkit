@@ -1,0 +1,20 @@
+# Sizing the carry for a slow, intermittent sneakernet link. The two artifacts
+# here are non-trivial placeholders (~6.6 MB + ~1 MB) so `estimate` returns a
+# realistic transfer time. Swap in your real multi-GB tarballs to plan the walk.
+name: remote-site-bringup
+distro: rke2
+registry: localhost:5000
+token: remote-site-bringup-token
+
+nodes:
+  - {name: cp-1, role: server, ip: 10.0.7.11}
+  - {name: cp-2, role: server, ip: 10.0.7.12}
+  - {name: cp-3, role: server, ip: 10.0.7.13}
+  - {name: w-1,  role: agent,  ip: 10.0.7.21}
+
+artifacts:
+  - {name: images, type: tarball, path: artifacts/images.tar}
+  - {name: registry-seed, type: registry, path: artifacts/registry.tar}
+
+manifests:
+  - bootstrap/cni.yaml

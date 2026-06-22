@@ -1,0 +1,8 @@
+# Placeholder for a generic Kubernetes install bundle (kubeadm-style binaries +
+# images). The "generic" distro lets bootkit sequence any installer that follows
+# the same init-first / join-rest pattern.
+kubeadm
+kubelet
+kubectl
+images/kube-apiserver.tar
+images/etcd.tar

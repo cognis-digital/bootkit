@@ -1,0 +1,4 @@
+# Placeholder image tarball for the carry-bundle demo.
+docker.io/rancher/rke2-runtime:v1.28.9-rke2r1
+docker.io/rancher/hardened-kubernetes:v1.28.9-rke2r1
+docker.io/rancher/hardened-etcd:v3.5.9-k3s1

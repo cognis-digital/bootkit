@@ -1,0 +1,7 @@
+# Placeholder for a registry seed directory tar (the offline image mirror).
+# Real content would be the on-disk layout of a docker/registry v2 store
+# exported by oradeck. bootkit sizes + hashes it for the carry list.
+v2/repositories/internal/api/_manifests/tags/2.4.1
+v2/repositories/internal/worker/_manifests/tags/2.4.1
+v2/repositories/internal/web/_manifests/tags/2.4.1
+v2/blobs/sha256/

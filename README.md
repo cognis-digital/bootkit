@@ -46,9 +46,23 @@ python -m bootkit manifest bootstrap.yaml
 # Emit the ordered per-node bootstrap plan.
 python -m bootkit plan bootstrap.yaml
 
+# Render one runnable install script per node.
+python -m bootkit render bootstrap.yaml --out-dir ./scripts
+
+# Estimate the carry size + transfer time over your link.
+python -m bootkit estimate bootstrap.yaml --mbps 100
+
+# Bundle EVERYTHING (preflight + manifest + plan + scripts) into one JSON
+# to carry across the gap — the far side needs no copy of bootkit.
+python -m bootkit bundle bootstrap.yaml --out carry-bundle.json
+
 # Run as a local MCP server (stdio JSON-RPC).
 python -m bootkit mcp
 ```
+
+> The spec accepts both block style and **flow style** — write a node as
+> `- {name: cp-1, role: server, ip: 10.0.0.11}` and a list as
+> `manifests: [bootstrap/cni.yaml]`. JSON specs (`.json`) are read natively too.
 
 ## What sets bootkit apart
 
@@ -64,6 +78,31 @@ python -m bootkit mcp
   [oradeck](https://github.com/cognis-digital/oradeck), bundle the app with
   [airlock](https://github.com/cognis-digital/airlock), and bring up the cluster
   with bootkit.
+
+## Demos
+
+Worked, runnable scenarios live in [`demos/`](demos) — each is a real spec in
+bootkit's input format plus a `SCENARIO.md` (where the data came from, the exact
+command, what to expect, and how to act). Every demo is verified to fire.
+
+| Demo | Scenario |
+| ---- | -------- |
+| [`01-basic`](demos/01-basic) | 3-server + 2-agent RKE2 cluster — the canonical walkthrough. |
+| [`02-single-node-k3s`](demos/02-single-node-k3s) | Single-node k3s edge appliance (no joins, no registry). |
+| [`03-k3s-ha-quorum`](demos/03-k3s-ha-quorum) | 5-server HA k3s cell + registry seed + two manifests. |
+| [`04-preflight-fails`](demos/04-preflight-fails) | Intentionally broken spec — preflight catches all four mistakes. |
+| [`05-generic-distro`](demos/05-generic-distro) | `distro: generic` (kubeadm-style) sequencing. |
+| [`06-json-spec`](demos/06-json-spec) | A JSON spec straight out of CI. |
+| [`07-large-transfer`](demos/07-large-transfer) | Estimate the carry over a slow link at different speeds. |
+| [`08-mcp-session`](demos/08-mcp-session) | Drive bootkit as an MCP server with a recorded JSON-RPC session. |
+| [`09-carry-bundle`](demos/09-carry-bundle) | Emit one self-contained `bundle` JSON to walk across the gap. |
+
+```bash
+# e.g. run the HA-cell demo end to end:
+python -m bootkit preflight demos/03-k3s-ha-quorum/bootstrap.yaml
+python -m bootkit plan      demos/03-k3s-ha-quorum/bootstrap.yaml
+python -m bootkit bundle    demos/09-carry-bundle/bootstrap.yaml --out carry-bundle.json
+```
 
 ## Tests
 
@@ -120,7 +159,13 @@ Part of the **Cognis Neural Suite** — 300+ source-available tools organized ac
    bootkit plan cluster.yaml
    bootkit render cluster.yaml --out-dir ./scripts
    ```
-5. **Automate in CI** — gate on preflight, then archive the plan as JSON:
+5. **Bundle the whole handoff** into one self-contained JSON (preflight +
+   manifest + plan + per-node scripts) — the far side needs no copy of bootkit
+   (exits non-zero if the embedded preflight fails, so it doubles as a gate):
+   ```bash
+   bootkit bundle cluster.yaml --out carry-bundle.json
+   ```
+6. **Automate in CI** — gate on preflight, then archive the plan as JSON:
    ```bash
    bootkit preflight cluster.yaml && bootkit plan cluster.yaml --format json > plan.json
    ```

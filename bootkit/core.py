@@ -44,6 +44,29 @@ class BootkitError(Exception):
 # YAML subset
 # --------------------------------------------------------------------------- #
 
+def _split_top(inner: str) -> List[str]:
+    """Split on commas that are not inside quotes or nested [] / {} flow."""
+    parts, buf, depth, sgl, dbl = [], [], 0, False, False
+    for ch in inner:
+        if ch == "'" and not dbl:
+            sgl = not sgl
+        elif ch == '"' and not sgl:
+            dbl = not dbl
+        if not sgl and not dbl:
+            if ch in "[{":
+                depth += 1
+            elif ch in "]}":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                parts.append("".join(buf))
+                buf = []
+                continue
+        buf.append(ch)
+    if buf or parts:
+        parts.append("".join(buf))
+    return [p for p in (p.strip() for p in parts) if p != ""]
+
+
 def _coerce(text: str) -> Any:
     s = text.strip()
     if s in ("", "~", "null"):
@@ -52,9 +75,21 @@ def _coerce(text: str) -> Any:
         return s == "true"
     if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'":
         return s[1:-1]
+    if len(s) >= 2 and s[0] == "{" and s[-1] == "}":
+        # Flow mapping: {name: cp-1, role: server, ip: 10.0.0.11}
+        obj: Dict[str, Any] = {}
+        for pair in _split_top(s[1:-1].strip()):
+            i = pair.find(":")
+            if i == -1:
+                continue
+            k = pair[:i].strip()
+            if len(k) >= 2 and k[0] == k[-1] and k[0] in "\"'":
+                k = k[1:-1]
+            obj[k] = _coerce(pair[i+1:].strip())
+        return obj
     if len(s) >= 2 and s[0] == "[" and s[-1] == "]":
         inner = s[1:-1].strip()
-        return [] if not inner else [_coerce(p) for p in inner.split(",")]
+        return [] if not inner else [_coerce(p) for p in _split_top(inner)]
     try:
         return int(s)
     except ValueError:
@@ -111,8 +146,11 @@ def parse_yaml_subset(text: str) -> Any:
                 break
             inner = content[2:].strip()
             pos[0] += 1
-            if ":" in inner and not (inner.find(":")+1 < len(inner)
-                                     and inner[inner.find(":")+1] != " "):
+            if inner[:1] in ("{", "[") or inner[:1] in "\"'":
+                # Flow mapping / flow list / quoted scalar item.
+                items.append(_coerce(inner))
+            elif ":" in inner and not (inner.find(":")+1 < len(inner)
+                                       and inner[inner.find(":")+1] != " "):
                 k, v = kv(inner)
                 obj = {k: (_coerce(v) if v else _child(indent + 2))}
                 obj.update(cont_map(indent + 2))
@@ -397,6 +435,46 @@ def _fmt_duration(seconds: float) -> str:
     if seconds < 3600:
         return f"{seconds/60:.1f}m"
     return f"{seconds/3600:.1f}h"
+
+
+# --------------------------------------------------------------------------- #
+# Carry bundle — one self-contained artifact to take across the gap
+# --------------------------------------------------------------------------- #
+
+def build_carry_bundle(spec: Dict[str, Any], base_dir: str = ".") -> Dict[str, Any]:
+    """Assemble everything needed on the far side into one JSON document.
+
+    Bundles, in a single structure you can carry across the air-gap alongside
+    the artifacts themselves:
+
+      * ``meta``     — tool/version, cluster name, distro, node/artifact counts
+      * ``preflight``— the topology + artifact-presence check result
+      * ``manifest`` — the carry list (sizes + sha256)
+      * ``plan``     — the ordered, per-node bootstrap step plan
+      * ``scripts``  — one runnable bash install script per node
+
+    This is deliberately self-contained: hand someone the bundle and the staged
+    artifacts and they have the full, ordered, verified bring-up — no need to
+    re-run bootkit (or even have it) on the disconnected side.
+    """
+    pf = preflight(spec, base_dir=base_dir)
+    man = build_carry_manifest(spec, base_dir=base_dir)
+    nodes = spec.get("nodes", []) or []
+    return {
+        "meta": {
+            "tool": TOOL_NAME,
+            "version": TOOL_VERSION,
+            "cluster": spec.get("name", "cluster"),
+            "distro": spec.get("distro", "generic"),
+            "node_count": len(nodes),
+            "artifact_count": man["artifact_count"],
+            "preflight_ok": pf["ok"],
+        },
+        "preflight": pf,
+        "manifest": man,
+        "plan": plan_bootstrap(spec),
+        "scripts": render_scripts(spec),
+    }
 
 
 # --------------------------------------------------------------------------- #

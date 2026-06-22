@@ -1,0 +1,3 @@
+# Placeholder image tarball for the MCP-driven demo.
+docker.io/rancher/rke2-runtime:v1.28.9-rke2r1
+docker.io/rancher/hardened-kubernetes:v1.28.9-rke2r1

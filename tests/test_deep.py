@@ -88,7 +88,7 @@ class TestMcp(unittest.TestCase):
     def test_list_and_plan(self):
         tl = mcp_server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
         self.assertEqual({t["name"] for t in tl["result"]["tools"]},
-                         {"plan", "preflight", "manifest"})
+                         {"plan", "preflight", "manifest", "bundle"})
         r = mcp_server.handle_request({
             "jsonrpc": "2.0", "id": 2, "method": "tools/call",
             "params": {"name": "preflight", "arguments": {"spec": SPEC}}})

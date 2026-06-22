@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 from bootkit import TOOL_NAME, TOOL_VERSION
 from bootkit.core import (
     BootkitError,
+    build_carry_bundle,
     build_carry_manifest,
     load_spec,
     plan_bootstrap,
@@ -52,6 +53,17 @@ _TOOLS = [
             "required": ["spec"], "additionalProperties": False,
         },
     },
+    {
+        "name": "bundle",
+        "description": "Emit one self-contained carry bundle (meta + preflight "
+                       "+ manifest + plan + per-node scripts) to take across "
+                       "the air-gap.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"spec": {"type": "string"}},
+            "required": ["spec"], "additionalProperties": False,
+        },
+    },
 ]
 
 
@@ -74,6 +86,9 @@ def _call_tool(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     elif name == "manifest":
         payload = build_carry_manifest(spec, base_dir=base)
         is_error = False
+    elif name == "bundle":
+        payload = build_carry_bundle(spec, base_dir=base)
+        is_error = not payload["meta"]["preflight_ok"]
     else:
         raise ValueError(f"unknown tool: {name}")
     return {"content": [{"type": "text", "text": json.dumps(payload, indent=2)}],

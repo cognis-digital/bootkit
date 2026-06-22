@@ -1,0 +1,21 @@
+# One spec -> one self-contained carry bundle. This 3-server + 2-agent RKE2
+# cluster is what you hand off: bundle the plan, the verified manifest, and the
+# per-node scripts into a single JSON to walk across the gap.
+name: handoff-cluster
+distro: rke2
+registry: localhost:5000
+token: handoff-cluster-token
+
+nodes:
+  - {name: cp-1, role: server, ip: 10.5.0.11}
+  - {name: cp-2, role: server, ip: 10.5.0.12}
+  - {name: cp-3, role: server, ip: 10.5.0.13}
+  - {name: w-1,  role: agent,  ip: 10.5.0.21}
+  - {name: w-2,  role: agent,  ip: 10.5.0.22}
+
+artifacts:
+  - {name: images, type: tarball, path: artifacts/images.txt}
+  - {name: registry-seed, type: registry, path: artifacts/registry.txt}
+
+manifests:
+  - bootstrap/cni.yaml

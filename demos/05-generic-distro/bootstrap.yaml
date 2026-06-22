@@ -1,0 +1,19 @@
+# A "generic" distro cluster: bootkit sequences the bring-up without assuming
+# k3s or RKE2 install commands. Useful when you drive a kubeadm-style installer
+# (or your own) but still want bootkit's ordering + carry list + preflight.
+# 3 servers (HA) + 1 agent.
+name: kubeadm-airgap
+distro: generic
+token: kubeadm-airgap-token
+
+nodes:
+  - {name: master-1, role: server, ip: 172.16.4.11}
+  - {name: master-2, role: server, ip: 172.16.4.12}
+  - {name: master-3, role: server, ip: 172.16.4.13}
+  - {name: worker-1, role: agent,  ip: 172.16.4.21}
+
+artifacts:
+  - {name: install-bundle, type: tarball, path: artifacts/install-bundle.txt}
+
+manifests:
+  - bootstrap/calico.yaml

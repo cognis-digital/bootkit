@@ -1,0 +1,5 @@
+# Placeholder for rke2-images.linux-amd64.tar.zst
+index.docker.io/rancher/rke2-runtime:v1.28.9-rke2r1
+index.docker.io/rancher/hardened-kubernetes:v1.28.9-rke2r1
+index.docker.io/rancher/hardened-etcd:v3.5.9-k3s1
+index.docker.io/rancher/rke2-cloud-provider:v0.0.4

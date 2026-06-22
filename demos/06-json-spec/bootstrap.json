@@ -1,0 +1,19 @@
+{
+  "name": "ci-generated-cluster",
+  "distro": "rke2",
+  "registry": "registry.internal:5000",
+  "token": "ci-generated-cluster-token",
+  "nodes": [
+    {"name": "srv-1", "role": "server", "ip": "10.42.0.11"},
+    {"name": "srv-2", "role": "server", "ip": "10.42.0.12"},
+    {"name": "srv-3", "role": "server", "ip": "10.42.0.13"},
+    {"name": "agt-1", "role": "agent", "ip": "10.42.0.21"},
+    {"name": "agt-2", "role": "agent", "ip": "10.42.0.22"},
+    {"name": "agt-3", "role": "agent", "ip": "10.42.0.23"}
+  ],
+  "artifacts": [
+    {"name": "rke2-images", "type": "tarball", "path": "artifacts/rke2-images.txt"},
+    {"name": "registry-seed", "type": "registry", "path": "artifacts/registry-seed.txt"}
+  ],
+  "manifests": ["bootstrap/cni.yaml"]
+}

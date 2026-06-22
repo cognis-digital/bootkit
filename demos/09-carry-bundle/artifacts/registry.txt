@@ -1,0 +1,4 @@
+# Placeholder offline registry seed (docker/registry v2 store layout).
+v2/repositories/app/api/_manifests/tags/3.1.0
+v2/repositories/app/web/_manifests/tags/3.1.0
+v2/blobs/sha256/

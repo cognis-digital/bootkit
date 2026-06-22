@@ -59,6 +59,11 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="Link speed in Mbit/s (default 100).")
     es.add_argument("--format", choices=("table", "json"), default="table")
 
+    bn = sub.add_parser("bundle", help="Emit one self-contained carry bundle "
+                        "(preflight+manifest+plan+scripts) as JSON.")
+    bn.add_argument("spec")
+    bn.add_argument("--out", help="Write the bundle JSON here (else stdout).")
+
     sub.add_parser("mcp", help="Run as an MCP server (stdio JSON-RPC).")
     return p
 
@@ -164,6 +169,28 @@ def _run_estimate(a) -> int:
     return 0
 
 
+def _run_bundle(a) -> int:
+    from bootkit import build_carry_bundle
+    base = os.path.dirname(os.path.abspath(a.spec))
+    try:
+        bundle = build_carry_bundle(load_spec(a.spec), base_dir=base)
+    except (OSError, BootkitError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    text = json.dumps(bundle, indent=2)
+    if a.out:
+        with open(a.out, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(text + "\n")
+        print(f"bootkit bundle — wrote {a.out} "
+              f"({bundle['meta']['node_count']} node(s), "
+              f"{bundle['meta']['artifact_count']} artifact(s), "
+              f"preflight {'OK' if bundle['meta']['preflight_ok'] else 'FAIL'})")
+    else:
+        print(text)
+    # Non-zero if the bundled preflight failed, so CI can gate on it.
+    return 0 if bundle["meta"]["preflight_ok"] else 1
+
+
 def _run_mcp() -> int:
     from bootkit.mcp_server import run_mcp_server
     run_mcp_server()
@@ -183,6 +210,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return _run_render(args)
     if args.command == "estimate":
         return _run_estimate(args)
+    if args.command == "bundle":
+        return _run_bundle(args)
     if args.command == "mcp":
         return _run_mcp()
     parser.print_help(sys.stderr)

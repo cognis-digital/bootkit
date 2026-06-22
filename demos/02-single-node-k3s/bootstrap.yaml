@@ -1,0 +1,20 @@
+# Single-node k3s "edge appliance": one box that is both control-plane and
+# workload host. Common for a forward sensor node or a field kiosk that must
+# run a few containers with no uplink. Odd server count (1) = valid quorum.
+name: sensor-edge-01
+distro: k3s
+registry: localhost:5000
+token: edge-appliance-bootstrap-token
+
+nodes:
+  - name: appliance-1
+    role: server
+    ip: 192.168.50.10
+
+artifacts:
+  - name: k3s-airgap-images
+    type: tarball
+    path: artifacts/k3s-airgap-images.txt
+
+manifests:
+  - bootstrap/workload.yaml

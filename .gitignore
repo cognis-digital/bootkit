@@ -7,3 +7,6 @@ dist/
 *.tar
 *.work/
 .venv/
+
+# Demo artifact placeholders are intentionally committed so the demos fire.
+!demos/**/artifacts/*.tar

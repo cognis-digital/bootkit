@@ -1,0 +1,17 @@
+# DELIBERATELY BROKEN spec — this demo shows what preflight catches *before*
+# you cross the air-gap. Four distinct mistakes are baked in:
+#   1. Even server count (2) -> etcd quorum risk.
+#   2. Duplicate node name (cp-2 appears twice).
+#   3. Duplicate IP (10.0.0.12 used twice).
+#   4. A referenced artifact file that does not exist on disk.
+name: broken-cluster
+distro: rke2
+token: broken-cluster-token
+
+nodes:
+  - {name: cp-1, role: server, ip: 10.0.0.11}
+  - {name: cp-2, role: server, ip: 10.0.0.12}
+  - {name: cp-2, role: agent,  ip: 10.0.0.12}
+
+artifacts:
+  - {name: rke2-images, type: tarball, path: artifacts/this-file-is-missing.tar}
