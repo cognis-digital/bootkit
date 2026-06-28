@@ -1,0 +1,22 @@
+$ bootkit-emit --help
+
+usage: bootkit [-h] [--version]
+               {plan,preflight,manifest,render,estimate,bundle,mcp} ...
+
+Air-gapped cluster bootstrap planner — turn a node inventory + artifact set
+into the ordered install plan to seed a disconnected k3s/RKE2-style cluster.
+
+positional arguments:
+  {plan,preflight,manifest,render,estimate,bundle,mcp}
+    plan                Emit the ordered per-node bootstrap plan.
+    preflight           Validate topology + artifact presence.
+    manifest            Build the artifact carry list (size+sha256).
+    render              Render per-node install scripts.
+    estimate            Estimate carry size + transfer time.
+    bundle              Emit one self-contained carry bundle
+                        (preflight+manifest+plan+scripts) as JSON.
+    mcp                 Run as an MCP server (stdio JSON-RPC).
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit

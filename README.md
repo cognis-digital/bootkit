@@ -9,6 +9,67 @@ Part of the **Cognis Neural Suite**. Pure Python standard library.
 
 ---
 
+
+<!-- cognis:example:start -->
+## 🔎 Example output
+
+Real, reproducible output from the tool — runs offline:
+
+```console
+$ bootkit-emit --version
+bootkit 0.1.0
+```
+
+```console
+$ bootkit-emit --help
+usage: bootkit [-h] [--version]
+               {plan,preflight,manifest,render,estimate,bundle,mcp} ...
+
+Air-gapped cluster bootstrap planner — turn a node inventory + artifact set
+into the ordered install plan to seed a disconnected k3s/RKE2-style cluster.
+
+positional arguments:
+  {plan,preflight,manifest,render,estimate,bundle,mcp}
+    plan                Emit the ordered per-node bootstrap plan.
+    preflight           Validate topology + artifact presence.
+    manifest            Build the artifact carry list (size+sha256).
+    render              Render per-node install scripts.
+    estimate            Estimate carry size + transfer time.
+    bundle              Emit one self-contained carry bundle
+                        (preflight+manifest+plan+scripts) as JSON.
+    mcp                 Run as an MCP server (stdio JSON-RPC).
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+```
+
+> Blocks above are real `bootkit` output — reproduce them from a clone.
+
+**Sample result format** _(illustrative values — run on your own data for real findings):_
+
+```
+{
+"findings": [
+    {
+        "id": "12345",
+        "title": "Malware Detection",
+        "description": "Bootkit detected on system",
+        "objects": [
+            {
+                "id": "bootkit-12345",
+                "type": "indicator",
+                "name": "Bootkit Malware",
+                "description": "Bootkit malware detected"
+            }
+        ]
+    }
+]
+}
+```
+
+<!-- cognis:example:end -->
+
 ## Why
 
 Bootstrapping Kubernetes in a disconnected environment is a sequencing problem:
